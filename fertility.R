@@ -1,9 +1,11 @@
-library(epiDisplay)
-library(dplyr)
-library(MASS)
-library(lme4)
+#library(epiDisplay)
+#library(dplyr)
+#library(MASS)
+#library(lme4)
 library(tidyverse)
 library(corrplot)
+
+#Fertility rate = ([average live births per year]/population)*100
 
 # 2000 - 2005 dataset
 dat1 <- read_csv("C:/Users/jagad/Desktop/fertility_working/EQI_data/EQI_2000_2005/EQI_fertility.csv")
@@ -11,17 +13,22 @@ dat1 <- read_csv("C:/Users/jagad/Desktop/fertility_working/EQI_data/EQI_2000_200
 #2005 - 2010 dataset
 dat2 <- read_csv("C:/Users/jagad/Desktop/fertility_working/EQI_data/EQI_2006_2010/EQI_fertility_wavetwo.csv")
 
+#combined
+dat3<- read_csv("C:/Users/jagad/Desktop/fertility_working/EQI_data/Merged_EQI_fertility.csv")
 
-str(dat)
+str(dat2)
 
 #correlation plot
-dat.cor1<-dat1[5:11]
+dat.cor1<-dat1[2:9]
 M1<-cor(dat.cor1)
 
-dat.cor2<-dat2[-1]
+dat.cor2<-dat2[2:9]
 M2<-cor(dat.cor2)
 
-corrplot(M2, method="color",  
+dat.cor3<- dat3[3:9]
+M3<- cor(dat.cor3)
+
+corrplot(M3, method="color",  
          type="upper", order="original", addrect = 2,
          addCoef.col = "black", # Add coefficient of correlation
          tl.col="black", tl.srt=45, #Text label color and rotation
