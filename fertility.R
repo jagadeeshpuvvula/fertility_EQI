@@ -10,6 +10,14 @@ dat$lg_fer_rate<- log(dat$Avg_fer_rate_pct)
 dat[,c(1:3)]<- lapply(dat[,c(1:3)], factor)
 str(dat)
 
+#histogram for linearity check
+dat %>% ggplot(aes(x=Avg_fer_rate_pct, fill=year))+
+  geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
+  scale_fill_manual(values=c("#69b3a2", "#404080"))+
+  xlab("Average fertility rate (%) per county")+
+  #stat_bin(bins = 20)+
+  theme(legend.position = "bottom")
+
 #correlation plot
 dat.cor1<-dat[4:12]
 M1<-cor(dat.cor1)
@@ -24,7 +32,7 @@ corrplot(M1, method="color",
          diag=FALSE)
 
 
-dat1<- dat %>% filter(year == "2000_05")
+dat1<- dat %>% filter(year == "2006_10")
 
 #Univariate analysis - linear model - looping indipendent variables
 
@@ -57,4 +65,5 @@ model_summary$std_estimate <-
                values_drop_na = TRUE) %>%
   pull(std_estimate)
 
-model_summary %>% filter(term != "Intercept")
+dat2_summ<- model_summary %>% filter(term != "Intercept")
+
