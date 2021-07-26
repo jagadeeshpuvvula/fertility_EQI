@@ -1,12 +1,11 @@
-library(epiDisplay)
-library(dplyr)
-library(MASS)
-library(lme4)
 library(tidyverse)
-library(corrplot)
+library(broom)
+library(stringi)
+library(lm.beta)
 
 # full data 200-2005 & 2006-2010
 dat <- read_csv("C:/Users/jagad/Desktop/fertility_working/EQI_data/eqi_fer_Jul142021_fin.csv")
+dat$lg_fer_rate<- log(dat$Avg_fer_rate_pct)
 
 dat[,c(1:3)]<- lapply(dat[,c(1:3)], factor)
 str(dat)
@@ -24,23 +23,38 @@ corrplot(M1, method="color",
          # hide correlation coefficient on the principal diagonal
          diag=FALSE)
 
-#linear approach
+
 dat1<- dat %>% filter(year == "2000_05")
-fit<-lm(log(Avg_fer_rate_pct)~build, data = dat1)
-summary(fit)
-confint(fit, level = 0.95)
-#[which(data_sens$case == 0),]
 
-#Negative binomial approach
-#2000-2005 data
-fit <- glmer.nb(LB ~ build+soc_dem+air+water+land+(1|POP), 
-                data=dat1)
+#Univariate analysis - linear model - looping indipendent variables
 
-IRR <- fixef(fit)
-confnitfixed <- confint(fit, parm = "beta_", method = "Wald")
-summary <- exp(cbind(IRR, confnitfixed))
-summary
+# Creating pedictor and outcome vectors
+ind_vec <- names(dat1)[c(4:9)]
+dep_vec <- names(dat1)[13]
 
-ggplot()+geom_pointrange(data=x, mapping=aes(x=x, 
-                                             y=IRR,ymin=2.5, ymax=97.5), 
-                         width=0.2, size=1, color="black", fill="black", shape=22)
+# Creating formulas and running the models
+indVar <- paste0(" ~ ", ind_vec)
+ind_dep <- unlist(map(indVar, ~paste0(dep_vec, .x))) #formula combinations
+#model building
+models <- map(setNames(ind_dep, ind_dep),
+              ~ lm(formula = as.formula(.x),
+                   data = dat1)) 
+#extract model summary
+model_summary <- map(models, ~ broom::tidy(.)) %>%
+  map2_df(.,
+          names(.),
+          ~ mutate(.x, which_dependent = .y)) %>%
+  select(which_dependent, everything()) %>%
+  mutate(term = gsub("\\(Intercept\\)", "Intercept", term),
+         which_dependent = stringi::stri_extract_first_words(which_dependent))
+
+model_summary$std_estimate <-
+  map_dfr(models, ~ coef(lm.beta::lm.beta(.)), .id = "which_dependent") %>%
+  pivot_longer(.,
+               cols = -which_dependent,
+               names_to = "term",
+               values_to = "std_estimate",
+               values_drop_na = TRUE) %>%
+  pull(std_estimate)
+
+model_summary %>% filter(term != "Intercept")
