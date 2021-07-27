@@ -2,6 +2,7 @@ library(tidyverse)
 library(broom)
 library(stringi)
 library(lm.beta)
+library(lme4)
 
 # full data 200-2005 & 2006-2010
 dat <- read_csv("C:/Users/jagad/Desktop/fertility_working/EQI_data/eqi_fer_Jul142021_fin.csv")
@@ -10,7 +11,6 @@ dat$lg_fer_rate<- log(dat$Avg_fer_rate_pct)
 dat[,c(1:3)]<- lapply(dat[,c(1:3)], factor)
 str(dat)
 
-#histogram for linearity check
 dat %>% ggplot(aes(x=Avg_fer_rate_pct, fill=year))+
   geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
   scale_fill_manual(values=c("#69b3a2", "#404080"))+
@@ -66,4 +66,12 @@ model_summary$std_estimate <-
   pull(std_estimate)
 
 dat2_summ<- model_summary %>% filter(term != "Intercept")
+
+#https://bbolker.github.io/morelia_2018/notes/mixedlab.html
+#Mixed effect model
+mod2<- lmer(Avg_fer_rate_pct~air+(1|County), data=dat1,
+            control=lmerControl(check.nobs.vs.nlev = "ignore",
+                                check.nobs.vs.rankZ = "ignore",
+                                check.nobs.vs.nRE="ignore"))
+summary(mod2)
 
